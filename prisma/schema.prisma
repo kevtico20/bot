@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model answer {
+  answ_id            Int         @id @default(autoincrement())
+  answ_answer        String      @db.VarChar(10)
+  answ_justification String?     @db.VarChar(80)
+  answ_evidence      String?     @db.VarChar(100)
+  answ_version       Int?
+  QUESTION_quest_id  Int
+  DEPARTMENT_dep_id  Int?
+  department         department? @relation(fields: [DEPARTMENT_dep_id], references: [dep_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ANSWER_DEPARTMENT1")
+  question           question    @relation(fields: [QUESTION_quest_id], references: [quest_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ANSWER_QUESTION1")
+
+  @@index([DEPARTMENT_dep_id], map: "DEPARTMENTANSWER_FK01")
+  @@index([QUESTION_quest_id], map: "QUESTIONANSWER_FK01")
+}
+
+model axis {
+  axi_id            Int         @id @default(autoincrement())
+  axi_name          String      @db.VarChar(45)
+  axi_version       Int?
+  DEPARTMENT_dep_id Int?
+  department        department? @relation(fields: [DEPARTMENT_dep_id], references: [dep_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_AXIS_DEPARTMENT1")
+
+  @@index([DEPARTMENT_dep_id], map: "DEPARTAXIS_FK01")
+}
+
+model axisform {
+  form_id           Int         @id @default(autoincrement())
+  form_name         String      @db.VarChar(45)
+  form_status       String      @db.VarChar(1)
+  form_description  String?     @db.VarChar(80)
+  form_version      Int?
+  form_date_start   DateTime?   @db.DateTime(0)
+  form_date_finish  DateTime?   @db.DateTime(0)
+  DEPARTMENT_dep_id Int?
+  department        department? @relation(fields: [DEPARTMENT_dep_id], references: [dep_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_AXISFORM_DEPARTMENT1")
+  section           section[]
+
+  @@index([DEPARTMENT_dep_id], map: "DEPARTMENTAXISFORM_FK01")
+}
+
+model department {
+  dep_id       Int        @id @default(autoincrement())
+  dep_name     String     @db.VarChar(45)
+  dep_version  Int?
+  UNIT_unit_id Int?
+  answer       answer[]
+  axis         axis[]
+  axisform     axisform[]
+  unit         unit?      @relation(fields: [UNIT_unit_id], references: [unit_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_DEPARTMENT_UNIT1")
+  user         user[]
+
+  @@index([UNIT_unit_id], map: "DEPARTMENTAXISFORM_FK01")
+}
+
+model generalparameters {
+  my_row_id BigInt  @id @db.UnsignedBigInt
+  ger_key   String? @db.VarChar(200)
+  ger_email String? @db.VarChar(50)
+}
+
+model question {
+  quest_id               Int       @id @default(autoincrement())
+  quest_ordern           String?   @db.VarChar(10)
+  quest_question         String    @db.VarChar(500)
+  quest_deactivationdate DateTime? @db.Date
+  quest_version          Int?
+  SECTION_sect_id        Int
+  answer                 answer[]
+  section                section   @relation(fields: [SECTION_sect_id], references: [sect_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_QUESTION_SECTION1")
+
+  @@index([SECTION_sect_id], map: "SECTIONQUESTION_FK01")
+}
+
+model section {
+  sect_id      Int        @id @default(autoincrement())
+  sect_name    String     @db.VarChar(100)
+  sect_version Int?
+  FORM_form_id Int
+  question     question[]
+  axisform     axisform   @relation(fields: [FORM_form_id], references: [form_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_SECTION_FORM1")
+
+  @@index([FORM_form_id], map: "FORMSECTION_FK01")
+}
+
+model unit {
+  unit_id      Int          @id @default(autoincrement())
+  unit_name    String       @db.VarChar(80)
+  unit_version Int?
+  department   department[]
+}
+
+model user {
+  usu_id            Int         @id @default(autoincrement())
+  usu_idnumber      String      @unique(map: "usu_idnumber_UNIQUE") @db.VarChar(15)
+  usu_name          String      @db.VarChar(30)
+  usu_lastname      String      @db.VarChar(30)
+  usu_slastname     String?     @db.VarChar(30)
+  usu_email         String      @unique(map: "usu_email_UNIQUE") @db.VarChar(100)
+  usu_torespond     String?     @db.VarChar(1)
+  usu_state         String      @default("A") @db.VarChar(1)
+  usu_permissons    String      @default("P") @db.VarChar(1)
+  usu_version       Int?
+  department_dep_id Int?
+  userType_usut_id  Int?
+  department        department? @relation(fields: [department_dep_id], references: [dep_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_user_department")
+  usertype          usertype?   @relation(fields: [userType_usut_id], references: [usut_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_user_userType1")
+
+  @@index([department_dep_id], map: "DEPARTUSU_FK01")
+  @@index([userType_usut_id], map: "TYPEUSER_FK01")
+}
+
+model usertype {
+  usut_id      Int    @id @default(autoincrement())
+  usut_role    String @db.VarChar(20)
+  usut_version Int?
+  user         user[]
+}
